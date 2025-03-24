@@ -39,55 +39,7 @@ FT_Error print_SfntName(FT_Face face, FT_UInt strid) {
   return 0;
 }
 
-// progname ttf_file face_idx instance_idx
-//     0       1         2         3
-
-int main(int argc, char *argv[]) {
-  // for (int i = 0; i < argc; i++)
-  //   printf("%d: %s\n", i, argv[i]);
-
-  char *ttf_file = argc > 1 ? argv[1] : TTF_DEFAULT_FILE;
-
-  FT_Long face_idx = 0;
-
-  if (argc > 2) {
-    face_idx = strtol(argv[2], NULL, 10);
-  }
-
-  FT_Long instance_idx = 0;
-
-  if (argc > 3) {
-    instance_idx = strtol(argv[3], NULL, 10);
-  }
-
-  FT_Library library;
-
-  FT_Error error = FT_Init_FreeType(&library);
-
-  if (error) {
-    printf("FT_Init_Freetype failed\n");
-
-    return 1;
-  }
-
-  FT_Int amajor, aminor, apatch;
-
-  FT_Library_Version(library, &amajor, &aminor, &apatch);
-
-  printf("Freetype v%d.%d.%d\n\n", amajor, aminor, apatch);
-
-  FT_Face face;
-
-  FT_Long face_index = (instance_idx << 16) + face_idx;
-
-  if (error = FT_New_Face(library, ttf_file, face_index, &face)) {
-    printf("FT_New_Face failed\n");
-
-    return 1;
-  }
-
-  printf("Font file %s:\n", ttf_file);
-
+void print_simple_stuff(FT_Face face) {
   printf("    family name: %s\n", face->family_name);
   printf("    style name:  %s\n", face->style_name);
 
@@ -101,11 +53,15 @@ int main(int argc, char *argv[]) {
   printf("    num_glyphs   = %ld\n", face->num_glyphs);
   printf("    num_charmaps = %d\n", face->num_charmaps);
 
+  printf("\n");
+
+  return;
+}
+
+void print_variations(FT_Face face) {
   FT_MM_Var* amaster;
 
-  error = FT_Get_MM_Var(face, &amaster);
-
-  printf("\n");
+  FT_Error error = FT_Get_MM_Var(face, &amaster);
 
   if (error)
     printf("*** FT_Get_MM_Var failed\n");
@@ -162,6 +118,63 @@ int main(int argc, char *argv[]) {
 
     // free(amaster); // ??
   }
+
+return;
+}
+// argv[0] = progname
+// argv[1] = ttf_file
+// argv[2] = face_idx
+// argv[3] = instance_idx
+
+int main(int argc, char *argv[]) {
+  // for (int i = 0; i < argc; i++)
+  //   printf("%d: %s\n", i, argv[i]);
+
+  char *ttf_file = argc > 1 ? argv[1] : TTF_DEFAULT_FILE;
+
+  FT_Long face_idx = 0;
+
+  if (argc > 2) {
+    face_idx = strtol(argv[2], NULL, 10);
+  }
+
+  FT_Long instance_idx = 0;
+
+  if (argc > 3) {
+    instance_idx = strtol(argv[3], NULL, 10);
+  }
+
+  FT_Library library;
+
+  FT_Error error = FT_Init_FreeType(&library);
+
+  if (error) {
+    printf("FT_Init_Freetype failed\n");
+
+    return 1;
+  }
+
+  FT_Int amajor, aminor, apatch;
+
+  FT_Library_Version(library, &amajor, &aminor, &apatch);
+
+  printf("Freetype v%d.%d.%d\n\n", amajor, aminor, apatch);
+
+  printf("Font file %s:\n\n", ttf_file);
+
+  FT_Face face;
+
+  FT_Long face_index = (instance_idx << 16) + face_idx;
+
+  if (error = FT_New_Face(library, ttf_file, face_index, &face)) {
+    printf("FT_New_Face failed\n");
+
+    return 1;
+  }
+
+  print_simple_stuff(face);
+
+  print_variations(face);
 
   FT_Done_Face(face);
 

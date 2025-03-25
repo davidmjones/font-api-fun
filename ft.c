@@ -20,6 +20,7 @@ FT_Error print_SfntName(FT_Face face, FT_UInt strid) {
 
     if (error) {
       printf("<unknown>");
+
       return error;
     } else {
       if (aname.platform_id == TT_PLATFORM_MICROSOFT &&
@@ -58,7 +59,7 @@ void print_simple_stuff(FT_Face face) {
   return;
 }
 
-void print_variations(FT_Face face) {
+void print_variations(FT_Face face, FT_Library library) {
   FT_MM_Var* amaster;
 
   FT_Error error = FT_Get_MM_Var(face, &amaster);
@@ -113,20 +114,20 @@ void print_variations(FT_Face face) {
         }
       }
     }
-
-    // FT_Done_MM_Var(library, amaster);
-
-    // free(amaster); // ??
   }
 
-return;
+  FT_Done_MM_Var(library, amaster);
+
+  return;
 }
+
 // argv[0] = progname
 // argv[1] = ttf_file
 // argv[2] = face_idx
 // argv[3] = instance_idx
 
-int main(int argc, char *argv[]) {
+int
+main(int argc, char *argv[]) {
   // for (int i = 0; i < argc; i++)
   //   printf("%d: %s\n", i, argv[i]);
 
@@ -158,23 +159,29 @@ int main(int argc, char *argv[]) {
 
   FT_Library_Version(library, &amajor, &aminor, &apatch);
 
-  printf("Freetype v%d.%d.%d\n\n", amajor, aminor, apatch);
+  printf("FreeType compile version v%d.%d.%d\n", FREETYPE_MAJOR, FREETYPE_MINOR, FREETYPE_PATCH);
+
+  printf("FreeType v%d.%d.%d\n\n", amajor, aminor, apatch);
 
   printf("Font file %s:\n\n", ttf_file);
 
   FT_Face face;
 
-  FT_Long face_index = (instance_idx << 16) + face_idx;
+  // FT_Long face_index = (instance_idx << 16) + face_idx;
+
+  FT_Long face_index = face_idx;
 
   if (error = FT_New_Face(library, ttf_file, face_index, &face)) {
-    printf("FT_New_Face failed\n");
+    printf("FT_New_Face (%ld) failed: %d\n", face_index, error);
 
     return 1;
   }
 
+  FT_Set_Named_Instance(face, instance_idx);
+
   print_simple_stuff(face);
 
-  print_variations(face);
+  print_variations(face, library);
 
   FT_Done_Face(face);
 

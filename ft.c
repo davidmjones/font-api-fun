@@ -49,8 +49,8 @@ void print_simple_stuff(FT_Face face) {
   FT_Long f_index = face->face_index;
 
   printf("    face_index   = %ld.%ld\n", f_index >> 16, f_index & 0xFFFF);
-  printf("    face_flags   = %ld\n", face->face_flags);
-  printf("    style_flags  = %ld\n", face->style_flags);
+  printf("    face_flags   = 0x%05lx\n", face->face_flags);
+  printf("    style_flags  = 0x%04lx\n", face->style_flags & 0xFFFF);
   printf("    num_glyphs   = %ld\n", face->num_glyphs);
   printf("    num_charmaps = %d\n", face->num_charmaps);
 
@@ -72,9 +72,9 @@ void print_variations(FT_Face face, FT_Library library) {
 
   FT_UInt num_axes = amaster->num_axis;
 
-  FT_Fixed coords[num_axes];
+  FT_Fixed design_coords[num_axes];
 
-  error = FT_Get_Var_Design_Coordinates(face, num_axes, coords);
+  error = FT_Get_Var_Design_Coordinates(face, num_axes, design_coords);
 
   if (error) {
     printf("*** FT_Get_Var_Design_Coordinates failed (%d)\n", error);
@@ -82,30 +82,39 @@ void print_variations(FT_Face face, FT_Library library) {
     return;
   }
 
+  FT_Fixed blend_coords[num_axes];
+
+  error = FT_Get_MM_Blend_Coordinates(face, num_axes, blend_coords);
+
+  if (error) {
+    printf("*** FT_Get_MM_Blend_Coordinates failed (%d)\n", error);
+
+    return;
+  }
+
   for (int i = 0; i < num_axes; i++) {
-    printf("Var axis %d = %ld\n", i, coords[i] >> 16);
+    printf("Var axis %d = %ld (%.2f)\n",
+           i,
+           design_coords[i] >> 16,   // ignore the fractional part
+           blend_coords[i]/65536.0);
   }
 
   printf("\n");
 
   if (num_axes > 0) {
-    printf("Variation %s:\n", num_axes == 1 ? "axis" : "axes");
+    printf("Variation %s:\n\n", num_axes == 1 ? "axis" : "axes");
 
     for (int i = 0; i < num_axes; i++) {
       FT_Var_Axis this_axis = amaster->axis[i];
 
-      printf("\nAxis %d\n", i);
-
-      printf("    %s (", this_axis.name);
+      printf("Axis %d: %s (", i, this_axis.name);
       print_SfntName(face, this_axis.strid);
-      printf(") [%ld, %ld]\n",
+      printf(") [%ld, %ld] (default=%ld)\n",
              this_axis.minimum >> 16,
-             this_axis.maximum >> 16);
+             this_axis.maximum >> 16,
+             this_axis.def >> 16);
 
-      printf("    Default = '%ld'\n", this_axis.def >> 16);
-      printf("    tag = '%lu'\n", this_axis.tag);
-
-      printf("'\n");
+      // printf("    tag = '%lu'\n", this_axis.tag);
     }
 
     if (amaster->num_namedstyles > 0) {
@@ -150,9 +159,6 @@ void print_variations(FT_Face face, FT_Library library) {
 
 int
 main(int argc, char *argv[]) {
-  // for (int i = 0; i < argc; i++)
-  //   printf("%d: %s\n", i, argv[i]);
-
   char *ttf_file = argc > 1 ? argv[1] : TTF_DEFAULT_FILE;
 
   FT_Long face_idx = 0;
@@ -200,6 +206,10 @@ main(int argc, char *argv[]) {
   }
 
   FT_Set_Named_Instance(face, instance_idx);
+
+  // FT_Fixed coords[1] = { 550 << 16 };
+
+  // FT_Set_Var_Design_Coordinates(face, 1, coords);
 
   print_simple_stuff(face);
 

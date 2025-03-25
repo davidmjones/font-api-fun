@@ -5,7 +5,7 @@ CFLAGS=-std=c11 -pedantic -pedantic-errors -Wno-parentheses
 FREETYPE2_INCLUDES=-I/usr/include/freetype2
 FREETYPE2_INCLUDES+=-I/usr/include/libpng16
 
-FREETYPE2_LIBS = -lfreetype
+FREETYPE2_LIBS=-lfreetype
 
 CFLAGS+=$(FREETYPE2_INCLUDES)
 

@@ -1,7 +1,7 @@
 CC=gcc
 
 ## No --pedantic: Some harfbuzz headers violate it.
-CFLAGS=-std=c11 -Wall -Wno-parentheses -static
+CFLAGS=-std=c11 -Wall -Wno-parentheses
 
 # HARFBUZZ_INCLUDES=-I/usr/include/harfbuzz
 

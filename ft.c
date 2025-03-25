@@ -64,54 +64,76 @@ void print_variations(FT_Face face, FT_Library library) {
 
   FT_Error error = FT_Get_MM_Var(face, &amaster);
 
-  if (error)
-    printf("*** FT_Get_MM_Var failed\n");
-  else {
-    if (amaster->num_axis > 0) {
-      printf("Variation %s:\n", amaster->num_axis == 1 ? "axis" : "axes");
+  if (error) {
+    printf("*** FT_Get_MM_Var failed (%d)\n", error);
 
-      for (int i = 0; i < amaster->num_axis; i++) {
-        FT_Var_Axis this_axis = amaster->axis[i];
+    return;
+  }
 
-        printf("\nAxis %d\n", i);
+  FT_UInt num_axes = amaster->num_axis;
 
-        printf("    %s [%ld, %ld]\n",
-               this_axis.name,
-               this_axis.minimum >> 16,
-               this_axis.maximum >> 16);
+  FT_Fixed coords[num_axes];
 
-        printf("    Default = '%ld'\n", this_axis.def >> 16);
-        printf("    tag = '%lu'\n", this_axis.tag);
-        printf("    strid = '%u'\n", this_axis.strid);
-      }
+  error = FT_Get_Var_Design_Coordinates(face, num_axes, coords);
 
-      if (amaster->num_namedstyles > 0) {
-        printf("\n");
+  if (error) {
+    printf("*** FT_Get_Var_Design_Coordinates failed (%d)\n", error);
 
-        FT_Var_Named_Style *named_style = amaster->namedstyle;
+    return;
+  }
 
-        for (int i = 0; i < amaster->num_namedstyles; i++) {
-          FT_Var_Named_Style this_style = named_style[i];
+  for (int i = 0; i < num_axes; i++) {
+    printf("Var axis %d = %ld\n", i, coords[i] >> 16);
+  }
 
-          printf("Named Style %d: ", i + 1);
+  printf("\n");
 
-          print_SfntName(face, this_style.strid);
+  if (num_axes > 0) {
+    printf("Variation %s:\n", num_axes == 1 ? "axis" : "axes");
 
-          printf(" [");
+    for (int i = 0; i < num_axes; i++) {
+      FT_Var_Axis this_axis = amaster->axis[i];
 
-          for (int i = 0; i < amaster->num_axis; i++) {
-            FT_Fixed coords = this_style.coords[i];
+      printf("\nAxis %d\n", i);
 
-            printf("%s=%ld", amaster->axis[i].name, coords >> 16);
+      printf("    %s (", this_axis.name);
+      print_SfntName(face, this_axis.strid);
+      printf(") [%ld, %ld]\n",
+             this_axis.minimum >> 16,
+             this_axis.maximum >> 16);
 
-            if (i < amaster->num_axis - 1) {
-              printf(", ");
-            }
+      printf("    Default = '%ld'\n", this_axis.def >> 16);
+      printf("    tag = '%lu'\n", this_axis.tag);
+
+      printf("'\n");
+    }
+
+    if (amaster->num_namedstyles > 0) {
+      printf("\n");
+
+      FT_Var_Named_Style *named_style = amaster->namedstyle;
+
+      for (int i = 0; i < amaster->num_namedstyles; i++) {
+        FT_Var_Named_Style this_style = named_style[i];
+
+        printf("Named Style %d: ", i + 1);
+
+        print_SfntName(face, this_style.strid);
+
+        printf(" [");
+
+        for (int i = 0; i < num_axes; i++) {
+          FT_Fixed coords = this_style.coords[i];
+
+          printf("%s=%ld", amaster->axis[i].name, coords >> 16);
+
+          if (i < num_axes - 1) {
+            printf(", ");
           }
-
-          printf("]\n");
-
         }
+
+        printf("]\n");
+
       }
     }
   }

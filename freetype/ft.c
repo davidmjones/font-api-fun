@@ -8,7 +8,7 @@
 #include FT_SFNT_NAMES_H
 #include FT_TRUETYPE_IDS_H
 
-#define TTF_DEFAULT_FILE "../STIXTwoText_wght.ttf"
+#define TTF_DEFAULT_FILE "../fonts/STIXTwoText_wght.ttf"
 
 FT_Error print_SfntName(FT_Face face, FT_UInt strid) {
   FT_UInt name_count = FT_Get_Sfnt_Name_Count(face);

@@ -59,6 +59,21 @@ void print_simple_stuff(FT_Face face) {
   return;
 }
 
+void print_tag(FT_ULong tag) {
+  printf("    tag = ");
+
+  for (int i = 24; i > -1; i -= 8) {
+    char c = (tag >> i) & 0xFF;
+
+    if (c != ' ')
+      printf("%c", c);
+  }
+
+  printf("\n");
+
+  return;
+}
+
 void print_variations(FT_Face face, FT_Library library) {
   FT_MM_Var* amaster;
 
@@ -114,7 +129,7 @@ void print_variations(FT_Face face, FT_Library library) {
              this_axis.maximum >> 16,
              this_axis.def >> 16);
 
-      // printf("    tag = '%lu'\n", this_axis.tag);
+      print_tag(this_axis.tag);
     }
 
     if (amaster->num_namedstyles > 0) {

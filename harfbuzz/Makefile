@@ -7,7 +7,7 @@ CFLAGS=-std=c11 -Wall -Wno-parentheses
 
 HARFBUZZ_INCLUDES=-I/work/github/harfbuzz/harfbuzz/src
 
-HARFBUZZ_LIBS=-L/work/github/harfbuzz/harfbuzz/build/src -lharfbuzz
+HARFBUZZ_LIBS=-L/work/github/harfbuzz/harfbuzz/build/src -lharfbuzz -lharfbuzz-subset
 
 CFLAGS+=$(HARFBUZZ_INCLUDES)
 

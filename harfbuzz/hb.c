@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <errno.h>
+
 #include <hb.h>
 #include <hb-ot.h>
+#include <hb-subset.h>
 
 #define TTF_DEFAULT_FILE "../fonts/STIXTwoText_wght.ttf"
 
@@ -48,6 +51,7 @@ void print_variation_data(hb_face_t *face) {
     hb_ot_var_axis_info_t axis = axes_array[i];
 
     printf("    Axis %u: ", axis.axis_index);
+    printf("(%c%c%c%c) ", HB_UNTAG(axis.tag));
     print_face_name(face, axis.name_id);
     printf(" [%.f, %.f] (default=%.f)\n", axis.min_value, axis.max_value, axis.default_value);
   }
@@ -83,13 +87,36 @@ void print_variation_data(hb_face_t *face) {
     }
 
     printf("]");
-    
+
     printf("\n");
   }
 
   printf("\n");
 
   return;
+}
+
+int
+write_file (const char *output_file, hb_blob_t *blob)
+{
+  FILE* out_fp = fopen(output_file, "wb");
+
+  unsigned int size;
+  const char* data = hb_blob_get_data (blob, &size);
+
+  while (size)
+    {
+      size_t ret = fwrite (data, 1, size, out_fp);
+      size -= ret;
+      data += ret;
+      if (size && ferror (out_fp)) {
+        printf("Failed to write output: %s", strerror (errno));
+
+        return 0;
+      }
+    }
+
+  return 1;
 }
 
 // argv[0] = progname
@@ -104,6 +131,8 @@ main(int argc, char *argv[]) {
   char *ttf_file    = argc > 1 ? argv[1] : TTF_DEFAULT_FILE;
 
   unsigned face_idx = argc > 2 ? strtol(argv[2], NULL, 10) : 0;
+
+  unsigned instance_idx = argc > 3 ? strtol(argv[3], NULL, 10) : 0;
 
   hb_blob_t *blob = hb_blob_create_from_file_or_fail(ttf_file);
 
@@ -122,7 +151,9 @@ main(int argc, char *argv[]) {
     printf("Resetting face_idx to %d\n", face_idx = num_faces - 1);
   }
 
-  hb_face_t *face = hb_face_create_or_fail(blob, face_idx);
+  unsigned index = (instance_idx << 16) + face_idx;
+
+  hb_face_t *face = hb_face_create_or_fail(blob, index);
 
   if (! face) {
     printf("hb_face_create_or_fail() failed\n");
@@ -142,15 +173,33 @@ main(int argc, char *argv[]) {
 
   print_variation_data(face);
 
-  hb_font_t *font = hb_font_create(face);
+  hb_subset_input_t *input = hb_subset_input_create_or_fail();
 
-  if (! font) {
-    printf("hb_font_create() failed\n");
+  if (! input)
+    printf("hb_subset_input_create_or_fail() failed\n");
 
-    return 1;
-  }
+  hb_subset_input_keep_everything (input);
 
-  hb_font_destroy(font);
+  hb_subset_input_pin_axis_location(input, face,
+                                    HB_TAG('w', 'g', 'h', 't'), 700.0);
+
+  hb_face_t *new_face = hb_subset_or_fail(face, input);
+
+  hb_blob_t *result = hb_face_reference_blob (new_face);
+
+  write_file("newfont.ttf", result);
+
+  // hb_font_t *font = hb_font_create(face);
+  //
+  // if (! font) {
+  //   printf("hb_font_create() failed\n");
+  //
+  //   return 1;
+  // }
+  //
+  // hb_font_destroy(font);
+
+  hb_subset_input_destroy(input);
 
   hb_face_destroy(face);
 

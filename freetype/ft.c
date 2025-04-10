@@ -117,14 +117,14 @@ void print_variations(FT_Face face, FT_Library library) {
   printf("\n");
 
   if (num_axes > 0) {
-    printf("Variation %s:\n\n", num_axes == 1 ? "axis" : "axes");
+    printf("Variation %s:\n", num_axes == 1 ? "axis" : "axes");
 
     for (int i = 0; i < num_axes; i++) {
       FT_Var_Axis this_axis = amaster->axis[i];
 
-      printf("Axis %d: %s (", i, this_axis.name);
+      printf("    Axis %d: ", i);
       print_SfntName(face, this_axis.strid);
-      printf(") [%ld, %ld] (default=%ld)\n",
+      printf(" [%ld, %ld] (default=%ld)\n",
              this_axis.minimum >> 16,
              this_axis.maximum >> 16,
              this_axis.def >> 16);
@@ -140,7 +140,7 @@ void print_variations(FT_Face face, FT_Library library) {
       for (int i = 0; i < amaster->num_namedstyles; i++) {
         FT_Var_Named_Style this_style = named_style[i];
 
-        printf("Named Style %d: ", i + 1);
+        printf("    Named Style %d: ", i + 1);
 
         print_SfntName(face, this_style.strid);
 
@@ -163,6 +163,18 @@ void print_variations(FT_Face face, FT_Library library) {
   }
 
   FT_Done_MM_Var(library, amaster);
+
+  return;
+}
+
+void print_freetype_version(FT_Library library) {
+  FT_Int amajor, aminor, apatch;
+
+  FT_Library_Version(library, &amajor, &aminor, &apatch);
+
+  printf("FreeType compile-time v%d.%d.%d, runtime v%d.%d.%d\n\n",
+         FREETYPE_MAJOR, FREETYPE_MINOR, FREETYPE_PATCH,
+         amajor, aminor, apatch);
 
   return;
 }
@@ -198,13 +210,7 @@ main(int argc, char *argv[]) {
     return 1;
   }
 
-  FT_Int amajor, aminor, apatch;
-
-  FT_Library_Version(library, &amajor, &aminor, &apatch);
-
-  printf("FreeType compile version v%d.%d.%d\n", FREETYPE_MAJOR, FREETYPE_MINOR, FREETYPE_PATCH);
-
-  printf("FreeType v%d.%d.%d\n\n", amajor, aminor, apatch);
+  print_freetype_version(library);
 
   printf("Font file %s:\n\n", ttf_file);
 
